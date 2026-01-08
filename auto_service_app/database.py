@@ -292,14 +292,14 @@ class Database:
 
     # ==================== МЕТОДЫ ДЛЯ ЗАКАЗОВ ====================
 
-    def add_order(self, client_id, service_id, total_amount, notes=""):
+    def add_order(self, client_id, service_id, total_amount, notes="", status=""):
         """Добавление нового заказа"""
         try:
             cursor = self.connection.cursor()
             cursor.execute('''
-                INSERT INTO orders (client_id, service_id, total_amount, notes)
-                VALUES (%s, %s, %s, %s)
-            ''', (client_id, service_id, total_amount, notes))
+                INSERT INTO orders (client_id, service_id, total_amount, notes, status)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (client_id, service_id, total_amount, notes, status))
 
             self.connection.commit()
             order_id = cursor.lastrowid

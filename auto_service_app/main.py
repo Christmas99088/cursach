@@ -11,7 +11,7 @@ from database import Database
 class Config:
     MYSQL_HOST = 'localhost'
     MYSQL_USER = 'root'
-    MYSQL_PASSWORD = 'кщще'  # Ваш пароль MySQL
+    MYSQL_PASSWORD = 'root'  # Ваш пароль MySQL
     MYSQL_DATABASE = 'auto_service_db'
     MYSQL_PORT = 3306
 
@@ -753,8 +753,7 @@ class AutoServiceApp:
                 client_id = int(client_var.get().split(":")[0])
                 service_id = int(service_var.get().split(":")[0])
                 total_amount = float(amount_var.get())
-
-                
+                status = status_var.get()
 
 
                 # Сохраняем в БД
@@ -762,7 +761,8 @@ class AutoServiceApp:
                     client_id=client_id,
                     service_id=service_id,
                     total_amount=total_amount,
-                    notes=notes_text.get("1.0", tk.END).strip()
+                    notes=notes_text.get("1.0", tk.END).strip(),
+                    status=status
                 )
 
                 if order_id:
