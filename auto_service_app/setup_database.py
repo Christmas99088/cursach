@@ -17,6 +17,7 @@ def setup_database():
     user = "кщще"
     password = input("Введите пароль MySQL (оставьте пустым если нет пароля): ") or "кщще"
     database = "auto_service_db"
+    auth_plugin = 'mysql_native_password'
 
 
     try:
@@ -25,7 +26,8 @@ def setup_database():
         connection = mysql.connector.connect(
             host=host,
             user=user,
-            password=password
+            password=password,
+            auth_plugin=auth_plugin,
         )
 
         if connection.is_connected():
