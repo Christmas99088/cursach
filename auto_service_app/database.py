@@ -40,8 +40,6 @@ class Database:
                 host=self.config.MYSQL_HOST,
                 user=self.config.MYSQL_USER,
                 password=self.config.MYSQL_PASSWORD,
-                port=self.config.MYSQL_PORT,
-                auth_plugin='mysql_native_password'
             )
 
             cursor = temp_conn.cursor()

@@ -8,7 +8,7 @@ class Config:
     # Настройки MySQL
     MYSQL_HOST = "localhost"
     MYSQL_USER = "root"
-    MYSQL_PASSWORD = "кщще"  # Ваш пароль MySQL
+    MYSQL_PASSWORD = "root"  # Ваш пароль MySQL
     MYSQL_DATABASE = "auto_service_db"
     MYSQL_PORT = 3306
 
