@@ -14,7 +14,7 @@ def setup_database():
 
     # Параметры подключения
     host = "localhost"
-    user = "root"
+    user = "кщще"
     password = input("Введите пароль MySQL (оставьте пустым если нет пароля): ") or "кщще"
     database = "auto_service_db"
 
