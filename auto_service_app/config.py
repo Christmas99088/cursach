@@ -1,3 +1,6 @@
+import json
+
+
 class Config:
     """Настройки приложения"""
 
@@ -6,11 +9,13 @@ class Config:
     APP_SIZE = "1200x700"
 
     # Настройки MySQL
-    MYSQL_HOST = "localhost"
+    MYSQL_HOST = json.load(open("IP.json"))["IP"]
     MYSQL_USER = "root"
-    MYSQL_PASSWORD = "кщще"  # Ваш пароль MySQL
+    MYSQL_PASSWORD = "root"  # Ваш пароль MySQL
     MYSQL_DATABASE = "auto_service_db"
     MYSQL_PORT = 3306
+
+
 
     # Цвета интерфейса
     PRIMARY_COLOR = "#2c3e50"  # Тёмно-синий

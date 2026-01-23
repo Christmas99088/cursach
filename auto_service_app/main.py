@@ -1,4 +1,5 @@
 import tkinter as tk
+from decimal import Decimal
 from tkinter import ttk, messagebox, simpledialog
 import mysql.connector
 from datetime import datetime
@@ -14,6 +15,9 @@ class Config:
     MYSQL_PASSWORD = 'root'  # Ваш пароль MySQL
     MYSQL_DATABASE = 'auto_service_db'
     MYSQL_PORT = 3306
+
+    IP_ADDRESS = "http://127.0.0.1"
+    PORT = 8002
 
 
 class AutoServiceApp:
@@ -53,11 +57,12 @@ class AutoServiceApp:
         self.create_services_tab()
         self.create_orders_tab()
         self.create_finance_tab()  # ← Добавляем финансовую вкладку
-        self.create_statistics_tab()
 
         # Статус бар
         self.status_bar = tk.Label(self.root, text="Готово", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+
 
     # ... остальные методы класса ...
 
@@ -176,7 +181,10 @@ class AutoServiceApp:
             month = months.index(month_name) + 1 if month_name in months else datetime.now().month
 
             # Получаем отчет из базы
-            report = self.db.get_financial_report("month", year, month)
+            if self.db.server:
+                report = self.db.get_financial_report_server("month", year, month)
+            else:
+                report = self.db.get_financial_report("month", year, month)
 
             if report:
                 # Обновляем статистику
@@ -206,34 +214,64 @@ class AutoServiceApp:
         except Exception as e:
             print(f"❌ Ошибка загрузки финансового отчета: {e}")
 
+    # В классе AutoServiceApp заменить метод update_finance_tables:
+
     def update_finance_tables(self, report):
-        """Обновление таблиц доходов и расходов"""
+        """Обновление таблиц доходов и расходов (все категории отдельно)"""
         # Очищаем таблицы
         for tree in [self.income_tree, self.expense_tree]:
             for row in tree.get_children():
                 tree.delete(row)
 
-        # Группируем данные по категориям
+        # Группируем данные по конкретным категориям
         income_data = {}
         expense_data = {}
 
         # Обрабатываем данные отчета
         for row in report['report_data']:
-            trans_type, count, total = row
+            if len(row) >= 3:  # Проверяем структуру данных
+                trans_type = row[0]
+                category = row[1] if len(row) > 1 else "Без категории"
+                count = row[2] if len(row) > 2 else 0
+                total = row[3] if len(row) > 3 else 0
 
-            # Для упрощения используем общие категории
-            category = "Доходы" if trans_type == 'income' else "Расходы"
+                # Для серверной версии данные могут приходить в другом формате
+                if isinstance(category, dict):  # Если данные пришли в формате словаря (сервер)
+                    # Извлекаем данные из словаря
+                    category_value = category.get('category', 'Без категории') if isinstance(category, dict) else str(
+                        category)
+                    count_value = category.get('count', 0) if isinstance(category, dict) else count
+                    total_value = category.get('total_amount', 0) if isinstance(category, dict) else total
+                else:
+                    category_value = str(category) if category else "Без категории"
+                    count_value = int(count) if count else 0
+                    total_value = float(total) if total else 0
 
-            if trans_type == 'income':
-                if category not in income_data:
-                    income_data[category] = {'total': 0, 'count': 0}
-                income_data[category]['total'] += total if total else 0
-                income_data[category]['count'] += count
-            elif trans_type == 'expense':
-                if category not in expense_data:
-                    expense_data[category] = {'total': 0, 'count': 0}
-                expense_data[category]['total'] += total if total else 0
-                expense_data[category]['count'] += count
+                if trans_type == 'income':
+                    if category_value not in income_data:
+                        income_data[category_value] = {'total': 0, 'count': 0}
+                    income_data[category_value]['total'] += total_value
+                    income_data[category_value]['count'] += count_value
+                elif trans_type == 'expense':
+                    if category_value not in expense_data:
+                        expense_data[category_value] = {'total': 0, 'count': 0}
+                    expense_data[category_value]['total'] += total_value
+                    expense_data[category_value]['count'] += count_value
+            else:
+                # Если структура простая (только тип, количество, сумма)
+                trans_type, count, total = row if len(row) >= 3 else (row[0], 0, 0)
+                category = "Общие"  # Используем общую категорию для простых данных
+
+                if trans_type == 'income':
+                    if category not in income_data:
+                        income_data[category] = {'total': 0, 'count': 0}
+                    income_data[category]['total'] += float(total) if total else 0
+                    income_data[category]['count'] += int(count) if count else 0
+                elif trans_type == 'expense':
+                    if category not in expense_data:
+                        expense_data[category] = {'total': 0, 'count': 0}
+                    expense_data[category]['total'] += float(total) if total else 0
+                    expense_data[category]['count'] += int(count) if count else 0
 
         # Заполняем таблицу доходов
         for category, data in income_data.items():
@@ -249,6 +287,21 @@ class AutoServiceApp:
                 category,
                 f"{data['total']:,.2f} руб.".replace(',', ' '),
                 data['count']
+            ))
+
+        # Если таблицы пустые, добавляем заглушку
+        if not income_data:
+            self.income_tree.insert('', tk.END, values=(
+                "Нет данных о доходах",
+                "0.00 руб.",
+                "0"
+            ))
+
+        if not expense_data:
+            self.expense_tree.insert('', tk.END, values=(
+                "Нет данных о расходах",
+                "0.00 руб.",
+                "0"
             ))
 
     # ... остальные методы класса ...
@@ -380,6 +433,7 @@ class AutoServiceApp:
         tk.Button(button_frame, text="Обновить список", command=self.load_orders).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Добавить заказ", command=self.add_new_order_dialog).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Изменить статус", command=self.change_order_status).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Добавить расходники", command=self.add_new_rashodnik).pack(side=tk.BOTTOM, padx=5)
 
     # ==================== МЕТОДЫ ДЛЯ РАБОТЫ С ДАННЫМИ ====================
 
@@ -403,7 +457,11 @@ class AutoServiceApp:
                 self.clients_tree.delete(row)
 
             # Получаем данные из БД
-            clients = self.db.get_clients()
+            if self.db.server:
+                clients = self.db.get_clients_server()
+            else:
+                clients = self.db.get_clients()
+
             self.clients_data = clients
 
             print(f"📋 Загружено {len(clients)} клиентов")
@@ -424,7 +482,10 @@ class AutoServiceApp:
                 self.services_tree.delete(row)
 
             # Получаем данные из БД
-            services = self.db.get_services()
+            if self.db.server:
+                services = self.db.get_services_server()
+            else:
+                services = self.db.get_services()
             self.services_data = services
 
             print(f"📋 Загружено {len(services)} услуг")
@@ -455,7 +516,10 @@ class AutoServiceApp:
                 self.orders_tree.delete(row)
 
             # Получаем данные из БД
-            orders = self.db.get_orders()
+            if self.db.server:
+                orders = self.db.get_orders_server()
+            else:
+                orders = self.db.get_orders()
             self.orders_data = orders
 
             print(f"📋 Получено {len(orders)} заказов из базы")
@@ -644,13 +708,22 @@ class AutoServiceApp:
                 duration = int(entries[3].get()) if entries[3].get() else 60
 
                 # Сохраняем в БД
-                service_id = self.db.add_service(
-                    name=entries[0].get(),
-                    description=entries[4].get("1.0", tk.END).strip(),
-                    price=price,
-                    duration=duration,
-                    category=entries[1].get()
-                )
+                if self.db.server:
+                    service_id = self.db.add_service_server(
+                        name=entries[0].get(),
+                        description=entries[4].get("1.0", tk.END).strip(),
+                        price=price,
+                        duration=duration,
+                        category=entries[1].get()
+                    )
+                else:
+                    service_id = self.db.add_service(
+                        name=entries[0].get(),
+                        description=entries[4].get("1.0", tk.END).strip(),
+                        price=price,
+                        duration=duration,
+                        category=entries[1].get()
+                    )
 
                 if service_id:
                     messagebox.showinfo("Успех", f"Услуга добавлена с ID: {service_id}")
@@ -690,7 +763,10 @@ class AutoServiceApp:
         # Выбор клиента
         tk.Label(fields_frame, text="Клиент*:").grid(row=0, column=0, sticky=tk.W, pady=5)
 
-        clients = self.db.get_clients()
+        if self.db.server:
+            clients = self.db.get_clients_server()
+        else:
+            clients = self.db.get_clients()
         client_options = [f"{c[0]}: {c[1]} {c[2]} ({c[3]})" for c in clients]
 
         client_var = tk.StringVar()
@@ -701,7 +777,10 @@ class AutoServiceApp:
         # Выбор услуги
         tk.Label(fields_frame, text="Услуга*:").grid(row=1, column=0, sticky=tk.W, pady=5)
 
-        services = self.db.get_services()
+        if self.db.server:
+            services = self.db.get_services_server()
+        else:
+            services = self.db.get_services()
         service_options = [f"{s[0]}: {s[1]} - {s[3]} руб." for s in services]
 
         service_var = tk.StringVar()
@@ -757,17 +836,27 @@ class AutoServiceApp:
 
 
                 # Сохраняем в БД
-                order_id = self.db.add_order(
-                    client_id=client_id,
-                    service_id=service_id,
-                    total_amount=total_amount,
-                    notes=notes_text.get("1.0", tk.END).strip(),
-                    status=status
-                )
+                if self.db.server:
+                    order_id = self.db.add_order_server(
+                        client_id=client_id,
+                        service_id=service_id,
+                        total_amount=total_amount,
+                        notes=notes_text.get("1.0", tk.END).strip(),
+                        status=status
+                    )
+                else:
+                    order_id = self.db.add_order(
+                        client_id=client_id,
+                        service_id=service_id,
+                        total_amount=total_amount,
+                        notes=notes_text.get("1.0", tk.END).strip(),
+                        status=status
+                    )
 
                 if order_id:
                     messagebox.showinfo("Успех", f"Заказ создан с ID: {order_id}")
                     self.load_orders()  # Обновляем таблицу
+
                     dialog.destroy()
                 else:
                     messagebox.showerror("Ошибка", "Не удалось создать заказ")
@@ -786,6 +875,53 @@ class AutoServiceApp:
         tk.Button(btn_frame, text="Отмена", command=dialog.destroy,
                   bg='#e74c3c', fg='white', padx=20).pack(side=tk.LEFT, padx=10)
 
+    def add_new_rashodnik(self):
+        """Диалог добавления новой услуги"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Новая услуга")
+        dialog.geometry("450x350")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Добавление новой услуги", font=('Arial', 12, 'bold')).pack(pady=10)
+
+        # Поля формы
+        fields_frame = tk.Frame(dialog)
+        fields_frame.pack(padx=20, pady=10)
+
+        labels = ["Категория:", "Цена* (руб.):"]
+        entries = []
+
+        for i, label_text in enumerate(labels):
+            tk.Label(fields_frame, text=label_text).grid(row=i, column=0, sticky=tk.W, pady=5)
+            entry = tk.Entry(fields_frame, width=30)
+            entry.grid(row=i, column=1, padx=10, pady=5)
+            entries.append(entry)
+
+        def save():
+            try:
+                if self.db.server:
+                    self.db.add_financial_transaction_server(datetime.now().strftime('%Y-%m-%d'), "expense",
+                                                  entries[0].get(), Decimal(str(entries[1].get())))
+                else:
+                    self.db.add_financial_transaction(datetime.now().strftime('%Y-%m-%d'), "expense",
+                                                             entries[0].get(), Decimal(str(entries[1].get())))
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Ошибка", e)
+
+        # Кнопки
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=20)
+
+        tk.Button(btn_frame, text="Сохранить", command=save,
+                  bg='#27ae60', fg='white', padx=20).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Отмена", command=dialog.destroy,
+                  bg='#e74c3c', fg='white', padx=20).pack(side=tk.LEFT, padx=10)
+
+
+
     def change_order_status(self):
         """Изменение статуса заказа"""
         selection = self.orders_tree.selection()
@@ -795,6 +931,9 @@ class AutoServiceApp:
 
         # Получаем ID выбранного заказа
         item = self.orders_tree.item(selection[0])
+        amount = item['values'][3]
+        category = item['values'][2]
+
         order_id = item['values'][0]
         current_status = item['values'][4]
 
@@ -805,18 +944,19 @@ class AutoServiceApp:
             initialvalue=current_status
         )
 
+
         if new_status and new_status != current_status:
             try:
                 # Обновляем статус в БД
+                if current_status == "Завершено":
+                    messagebox.showerror("Предупреждение", f"Нельзя изменить завершённый заказ")
+                    return
                 print(f"🔄 Изменение статуса заказа {order_id} на '{new_status}'")
 
-                # Пока просто выводим сообщение
-                messagebox.showinfo("В разработке",
-                                    f"Заказ {order_id}: {current_status} → {new_status}\n\n"
-                                    "Эта функция будет реализована в следующей версии")
-
-                # TODO: Реализовать метод update_order_status в database.py
-                # self.db.update_order_status(order_id, new_status)
+                if self.db.server:
+                    self.db.update_order_status_server(order_id, new_status, amount, category)
+                else:
+                    self.db.update_order_status(order_id, new_status, amount, category)
 
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось изменить статус: {e}")
@@ -837,13 +977,37 @@ class AutoServiceApp:
 # ==================== ЗАПУСК ПРИЛОЖЕНИЯ ====================
 
 if __name__ == "__main__":
+    #db = Database(Config())
+    #c = Config()
+    #c.IP_ADDRESS = ""
+    #db2 = Database(c)
+    #db.add_service_server('Замена масла', 'Полная замена моторного масла и фильтра', '2000.00', '60', 'Техобслуживание')
+    #print("get_services_server ",db.get_services_server())
+    #db.add_order_server(1, 3, 2000)
+    #print("get_orders_server ", db.get_orders_server())
+    #db.add_financial_transaction_server("2026-01-06","expense","Запчасти", "43239.00", "", "ТЕСТ #21")
+    #print("get_financial_report_server ", db.get_financial_report_server())
+    #print("get_monthly_financial_overview_server ", db.get_monthly_financial_overview_server())
+    #print("get_top_categories_server ", db.get_top_categories_server())
+    #db.add_order_with_status_server(1,3,1488,)
+    #print(db.delete_service_server(2))
+    #print(db.delete_client_server(2))
+    #print(db.delete_order_server(2))
+
     root = tk.Tk()
+
+    #print(db2.get_clients())
+    #print(db.get_clients_server())
+
+    #print(db.get_orders_server())
+    #print(db2.get_orders())
+
+
 
     # Настройка иконки (если есть)
     try:
         root.iconbitmap('icon.ico')
     except:
         pass
-
     app = AutoServiceApp(root)
     root.mainloop()

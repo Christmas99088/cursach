@@ -218,7 +218,10 @@ class FinanceTab:
             db_period = period_map.get(period_type, "month")
 
             # Получаем отчет из базы данных
-            report = self.db.get_financial_report(db_period, year, month)
+            if self.db.server:
+                report = self.db.get_financial_report_server(db_period, year, month)
+            else:
+                report = self.db.get_financial_report(db_period, year, month)
 
             if report:
                 # Обновляем карточки статистики
@@ -235,32 +238,59 @@ class FinanceTab:
             messagebox.showerror("Ошибка", f"Ошибка загрузки данных: {e}")
             print(f"❌ Ошибка загрузки финансовых данных: {e}")
 
-    def update_statistics_cards(self, report):
-        """Обновление карточек статистики"""
-        # Обновляем значения в карточках
-        self.cards['income'].value_label.config(
-            text=f"{report['total_income']:,.2f} руб.".replace(',', ' ')
-        )
+    def update_finance_tables(self, report):
+        """Обновление таблиц доходов и расходов (все категории отдельно)"""
+        # Очищаем таблицы
+        for tree in [self.income_tree, self.expense_tree]:
+            for row in tree.get_children():
+                tree.delete(row)
 
-        self.cards['expense'].value_label.config(
-            text=f"{report['total_expense']:,.2f} руб.".replace(',', ' ')
-        )
+        # Обрабатываем данные отчета
+        for row in report['report_data']:
+            if len(row) >= 4:
+                trans_type, category, count, total = row
 
-        self.cards['profit'].value_label.config(
-            text=f"{report['profit']:,.2f} руб.".replace(',', ' ')
-        )
+                if trans_type == 'income':
+                    self.income_tree.insert('', tk.END, values=(
+                        str(category) if category else "Без категории",
+                        f"{float(total):,.2f} руб.".replace(',', ' '),
+                        int(count)
+                    ))
+                elif trans_type == 'expense':
+                    self.expense_tree.insert('', tk.END, values=(
+                        str(category) if category else "Без категории",
+                        f"{float(total):,.2f} руб.".replace(',', ' '),
+                        int(count)
+                    ))
 
-        self.cards['transactions'].value_label.config(
-            text=str(report['total_transactions'])
-        )
+        # Если таблицы пустые, добавляем заглушку
+        if not self.income_tree.get_children():
+            self.income_tree.insert('', tk.END, values=(
+                "Нет данных о доходах",
+                "0.00 руб.",
+                "0"
+            ))
 
-        # Изменяем цвет прибыли в зависимости от значения
-        if report['profit'] > 0:
-            self.cards['profit'].value_label.config(fg="#27ae60")  # зеленый
-        elif report['profit'] < 0:
-            self.cards['profit'].value_label.config(fg="#e74c3c")  # красный
-        else:
-            self.cards['profit'].value_label.config(fg="#7f8c8d")  # серый
+        if not self.expense_tree.get_children():
+            self.expense_tree.insert('', tk.END, values=(
+                "Нет данных о расходах",
+                "0.00 руб.",
+                "0"
+            ))
+
+        # Сортируем по сумме (от большего к меньшему)
+        for column in ('Сумма',):
+            items = [(self.income_tree.set(child, column), child)
+                     for child in self.income_tree.get_children()]
+            items.sort(key=lambda x: float(x[0].split()[0].replace(',', '')), reverse=True)
+            for index, (val, child) in enumerate(items):
+                self.income_tree.move(child, '', index)
+
+            items = [(self.expense_tree.set(child, column), child)
+                     for child in self.expense_tree.get_children()]
+            items.sort(key=lambda x: float(x[0].split()[0].replace(',', '')), reverse=True)
+            for index, (val, child) in enumerate(items):
+                self.expense_tree.move(child, '', index)
 
     def update_income_expense_tables(self, report):
         """Обновление таблиц доходов и расходов"""
