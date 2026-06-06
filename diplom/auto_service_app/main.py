@@ -22,12 +22,20 @@ class Config:
     MYSQL_PORT = 3306
 
     IP_ADDRESS = "http://127.0.0.1"
+    SERVER_URL = "http://127.0.0.1:8000"
     PORT = 8002
 
 
 class AutoServiceApp:
     def __init__(self, root):
         self.root = root
+
+        self.clients_data = []
+        self.services_data = []
+        self.orders_data = []
+        self.clients_tree = None
+        self.services_tree = None
+        self.orders_tree = None
 
         # Настройка главного окна
         self.root.title("Система учёта автосервиса")
@@ -839,9 +847,10 @@ class AutoServiceApp:
     def load_services(self):
         """Загрузка услуг из БД"""
         try:
-            # Очищаем таблицу
-            for row in self.services_tree.get_children():
-                self.services_tree.delete(row)
+            # Очищаем таблицу только если она существует
+            if self.services_tree is not None:
+                for row in self.services_tree.get_children():
+                    self.services_tree.delete(row)
 
             # Получаем данные из БД
             if self.db.server:
@@ -852,19 +861,19 @@ class AutoServiceApp:
 
             print(f"📋 Загружено {len(services)} услуг")
 
-            # Заполняем таблицу
-            for service in services:
-                # Форматируем цену
-                formatted_price = f"{service[3]:.2f}" if service[3] else "0.00"
-                formatted_values = (
-                    service[0],  # ID
-                    service[1],  # Название
-                    service[2][:50] + "..." if service[2] and len(service[2]) > 50 else service[2],  # Описание
-                    formatted_price,  # Цена
-                    service[4],  # Длительность
-                    service[5]  # Категория
-                )
-                self.services_tree.insert('', tk.END, values=formatted_values)
+            # Заполняем таблицу только если она существует
+            if self.services_tree is not None:
+                for service in services:
+                    formatted_price = f"{service[3]:.2f}" if service[3] else "0.00"
+                    formatted_values = (
+                        service[0],  # ID
+                        service[1],  # Название
+                        service[2][:50] + "..." if service[2] and len(service[2]) > 50 else service[2],
+                        formatted_price,
+                        service[4],
+                        service[5]
+                    )
+                    self.services_tree.insert('', tk.END, values=formatted_values)
 
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось загрузить услуги: {e}")

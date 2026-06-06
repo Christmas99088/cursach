@@ -10,6 +10,8 @@ plt.style.use('seaborn-v0_8-darkgrid')
 plt.rcParams['font.size'] = 10
 plt.rcParams['axes.titlesize'] = 12
 plt.rcParams['axes.labelsize'] = 10
+# Для поддержки эмодзи (если они будут) – используем шрифт с эмодзи
+#plt.rcParams['font.family'] = 'Segoe UI Emoji'  # Windows, для других ОС нужно изменить
 
 
 class FinancialAnalytics:
@@ -92,7 +94,7 @@ class FinancialAnalytics:
         header_frame.pack_propagate(False)
 
         # Заголовок
-        title = tk.Label(header_frame, text="📊 РАСШИРЕННАЯ ФИНАНСОВАЯ АНАЛИТИКА",
+        title = tk.Label(header_frame, text="РАСШИРЕННАЯ ФИНАНСОВАЯ АНАЛИТИКА",
                          font=('Arial', 18, 'bold'), bg='#2c3e50', fg='white')
         title.pack(expand=True)
 
@@ -124,7 +126,6 @@ class FinancialAnalytics:
         period_combo = ttk.Combobox(row1, textvariable=self.period_var,
                                     values=["3", "6", "12", "24"], width=8)
         period_combo.pack(side=tk.LEFT, padx=(0, 5))
-        # ↓↓↓ ДОБАВЬТЕ ЭТУ СТРОКУ ↓↓↓
         period_combo.bind('<<ComboboxSelected>>', lambda e: self.load_analytics())
 
         tk.Label(row1, text="месяцев", font=('Arial', 10),
@@ -140,11 +141,10 @@ class FinancialAnalytics:
                                   values=[str(y) for y in range(current_year - 3, current_year + 1)],
                                   width=8)
         year_combo.pack(side=tk.LEFT, padx=(0, 30))
-        # ↓↓↓ ДОБАВЬТЕ ЭТУ СТРОКУ ↓↓↓
         year_combo.bind('<<ComboboxSelected>>', lambda e: self.load_analytics())
 
         # Кнопка обновления (оставляем на всякий случай)
-        update_btn = tk.Button(row1, text="🔄 Обновить аналитику",
+        update_btn = tk.Button(row1, text="Обновить аналитику",
                                command=self.load_analytics,
                                bg='#3498db', fg='white', font=('Arial', 10, 'bold'),
                                padx=20, pady=5, cursor='hand2')
@@ -154,7 +154,7 @@ class FinancialAnalytics:
         row2 = tk.Frame(inner_frame, bg='white')
         row2.pack(fill=tk.X, pady=5)
 
-        info_label = tk.Label(row2, text="💡 Для построения прогноза необходимо минимум 3 месяца данных",
+        info_label = tk.Label(row2, text="Для построения прогноза необходимо минимум 3 месяца данных",
                               font=('Arial', 9), bg='white', fg='#7f8c8d')
         info_label.pack(side=tk.LEFT)
 
@@ -201,19 +201,17 @@ class FinancialAnalytics:
         # Рентабельность (можно сделать динамической)
         profit_margin = 35
 
-        print(f"📊 KPI: Доход={total_revenue}, Заказов={total_orders}, Средний чек={avg_check}")  # Отладка
+        print(f"KPI: Доход={total_revenue}, Заказов={total_orders}, Средний чек={avg_check}")  # Отладка
 
         # Данные для карточек
         kpis = [
-            ("💰 ОБЩИЙ ДОХОД", f"{total_revenue:,.0f}", "руб.", "#27ae60"),
-            ("📊 СРЕДНИЙ ЧЕК", f"{avg_check:,.0f}", "руб.", "#3498db"),
-            ("📈 РЕНТАБЕЛЬНОСТЬ", f"{profit_margin:.1f}", "%", "#f39c12"),
-            ("👥 КЛИЕНТЫ", f"{unique_clients}", "", "#9b59b6"),
-            ("🔄 УДЕРЖАНИЕ", f"{retention_rate:.1f}", "%", "#1abc9c"),
-            ("📦 ЗАКАЗЫ", f"{total_orders}", "", "#e74c3c")
+            ("ОБЩИЙ ДОХОД", f"{total_revenue:,.0f}", "руб.", "#27ae60"),
+            ("СРЕДНИЙ ЧЕК", f"{avg_check:,.0f}", "руб.", "#3498db"),
+            ("РЕНТАБЕЛЬНОСТЬ", f"{profit_margin:.1f}", "%", "#f39c12"),
+            ("КЛИЕНТЫ", f"{unique_clients}", "", "#9b59b6"),
+            ("УДЕРЖАНИЕ", f"{retention_rate:.1f}", "%", "#1abc9c"),
+            ("ЗАКАЗЫ", f"{total_orders}", "", "#e74c3c")
         ]
-
-        # ... остальной код создания карточек ...
 
         # Создаем карточки в сетке (3x2)
         row_num = 0
@@ -284,12 +282,12 @@ class FinancialAnalytics:
         months = int(self.period_var.get())
         year = int(self.year_var.get())
 
-        print(f"📊 ===== ЗАГРУЗКА АНАЛИТИКИ =====")
-        print(f"📊 Период: {months} месяцев")
-        print(f"📊 Год: {year}")
+        print(f"===== ЗАГРУЗКА АНАЛИТИКИ =====")
+        print(f"Период: {months} месяцев")
+        print(f"Год: {year}")
 
         # Показываем индикатор загрузки
-        loading_label = tk.Label(self.charts_grid, text="⏳ Загрузка данных...",
+        loading_label = tk.Label(self.charts_grid, text="Загрузка данных...",
                                  font=('Arial', 14), fg='gray', bg='#f0f0f0')
         loading_label.pack(expand=True, pady=50)
         self.charts_grid.update()
@@ -310,8 +308,7 @@ class FinancialAnalytics:
         # Обновляем заголовок с информацией о периоде
         if 'start_date' in data and 'end_date' in data:
             period_text = f"Период: {data['start_date'].strftime('%d.%m.%Y')} - {data['end_date'].strftime('%d.%m.%Y')}"
-            # Можно добавить где-нибудь отображение периода
-            print(f"📊 {period_text}")
+            print(f"{period_text}")
 
         # Создаем KPI карточки
         self.create_kpi_cards(data)
@@ -332,7 +329,7 @@ class FinancialAnalytics:
 
     def refresh_all_charts(self):
         """Принудительное обновление всех графиков"""
-        print("🔄 Принудительное обновление аналитики...")
+        print("Принудительное обновление аналитики...")
         self.load_analytics()
 
     def get_financial_data(self, months, year):
@@ -340,10 +337,9 @@ class FinancialAnalytics:
         try:
             cursor = self.db.connection.cursor(dictionary=True)
 
-            print(f"📊 Запрос данных: период={months} месяцев, год={year}")
+            print(f"Запрос данных: период={months} месяцев, год={year}")
 
             # Рассчитываем дату начала периода
-            from datetime import datetime
             current_date = datetime.now()
 
             # Если выбран текущий год, считаем от текущей даты
@@ -355,7 +351,7 @@ class FinancialAnalytics:
 
             end_date = datetime(year, 12, 31) if year == current_date.year else datetime(year, 12, 31)
 
-            print(f"📅 Период: с {start_date.strftime('%Y-%m-%d')} по {end_date.strftime('%Y-%m-%d')}")
+            print(f"Период: с {start_date.strftime('%Y-%m-%d')} по {end_date.strftime('%Y-%m-%d')}")
 
             # Получаем помесячные данные за указанный период
             query = """
@@ -380,7 +376,7 @@ class FinancialAnalytics:
             if len(monthly_data) > months and year == current_date.year:
                 monthly_data = monthly_data[-months:]
 
-            print(f"📊 Получено {len(monthly_data)} месяцев данных")
+            print(f"Получено {len(monthly_data)} месяцев данных")
             for m in monthly_data:
                 print(f"   {m['month']}: {m['revenue']} руб.")
 
@@ -415,7 +411,7 @@ class FinancialAnalytics:
             }
 
         except Exception as e:
-            print(f"❌ Ошибка получения данных: {e}")
+            print(f"Ошибка получения данных: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -423,7 +419,7 @@ class FinancialAnalytics:
     def create_revenue_chart(self, data, parent, row, col):
         """График доходов по месяцам"""
 
-        frame = self.create_chart_in_grid(parent, "📈 Динамика доходов", row, col)
+        frame = self.create_chart_in_grid(parent, "Динамика доходов", row, col)
 
         monthly_data = data['monthly_data']
 
@@ -438,18 +434,18 @@ class FinancialAnalytics:
             # Столбчатая диаграмма
             bars = ax.bar(months, revenues, color='#3498db', alpha=0.7)
 
-            # Линия тренда
+            # Линия тренда (только если есть больше 1 точки)
             x = np.arange(len(months))
             if len(x) > 1:
                 z = np.polyfit(x, revenues, 1)
                 p = np.poly1d(z)
                 ax.plot(x, p(x), "r--", alpha=0.8, linewidth=2, label='Тренд')
+                ax.legend()  # легенда только когда есть что показывать
 
             ax.set_xlabel('Месяц', fontsize=10)
             ax.set_ylabel('Доход (руб.)', fontsize=10)
-            ax.set_title(f'Динамика доходов', fontsize=11)
+            ax.set_title('Динамика доходов', fontsize=11)
             ax.grid(True, alpha=0.3)
-            ax.legend()
 
             # Добавляем значения на столбцы
             for i, (bar, val) in enumerate(zip(bars, revenues)):
@@ -468,7 +464,7 @@ class FinancialAnalytics:
     def create_profit_margin_chart(self, data, parent, row, col):
         """График рентабельности и среднего чека"""
 
-        frame = self.create_chart_in_grid(parent, "📊 Анализ эффективности", row, col)
+        frame = self.create_chart_in_grid(parent, "Анализ эффективности", row, col)
 
         monthly_data = data['monthly_data']
 
@@ -483,14 +479,14 @@ class FinancialAnalytics:
             color = '#27ae60'
             ax1.set_xlabel('Месяц', fontsize=10)
             ax1.set_ylabel('Средний чек (руб.)', color=color, fontsize=10)
-            line1 = ax1.plot(months, avg_checks, color=color, marker='o', linewidth=2, label='Средний чек')
+            ax1.plot(months, avg_checks, color=color, marker='o', linewidth=2, label='Средний чек')
             ax1.tick_params(axis='y', labelcolor=color)
 
             # Вторая ось для количества заказов
             ax2 = ax1.twinx()
             color2 = '#3498db'
             ax2.set_ylabel('Количество заказов', color=color2, fontsize=10)
-            bars = ax2.bar(months, orders_count, color=color2, alpha=0.3, label='Кол-во заказов')
+            ax2.bar(months, orders_count, color=color2, alpha=0.3, label='Кол-во заказов')
             ax2.tick_params(axis='y', labelcolor=color2)
 
             ax1.grid(True, alpha=0.3)
@@ -513,7 +509,7 @@ class FinancialAnalytics:
     def create_top_services_chart(self, data, parent, row, col):
         """Круговая диаграмма топ услуг"""
 
-        frame = self.create_chart_in_grid(parent, "🥇 Топ услуг по доходу", row, col)
+        frame = self.create_chart_in_grid(parent, "Топ услуг по доходу", row, col)
 
         # Очищаем предыдущий график
         for widget in frame.winfo_children():
@@ -528,8 +524,8 @@ class FinancialAnalytics:
             revenues = [float(s['total_revenue']) for s in top_services]
 
             colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6']
-            wedges, texts, autotexts = ax.pie(revenues, labels=names, autopct='%1.1f%%',
-                                              colors=colors, textprops={'fontsize': 9})
+            ax.pie(revenues, labels=names, autopct='%1.1f%%',
+                   colors=colors, textprops={'fontsize': 9})
 
             ax.set_title('Распределение доходов по услугам', fontsize=11)
 
@@ -545,7 +541,7 @@ class FinancialAnalytics:
     def create_seasonality_chart(self, data, parent, row, col):
         """График сезонности (по месяцам за все годы)"""
 
-        frame = self.create_chart_in_grid(parent, "📅 Сезонность продаж", row, col)
+        frame = self.create_chart_in_grid(parent, "Сезонность продаж", row, col)
 
         try:
             cursor = self.db.connection.cursor(dictionary=True)
@@ -586,7 +582,7 @@ class FinancialAnalytics:
                 bars[max_idx].set_alpha(0.9)
 
                 # Добавляем подпись пика
-                ax.text(months_num[max_idx] - 1, max(revenues) + 1000, '📈 ПИК',
+                ax.text(months_num[max_idx] - 1, max(revenues) + 1000, 'ПИК',
                         ha='center', fontsize=9, color='red', fontweight='bold')
 
                 plt.tight_layout()
@@ -606,7 +602,7 @@ class FinancialAnalytics:
     def create_forecast_chart(self, data, parent, row, col, colspan=1):
         """Прогнозирование доходов"""
 
-        frame = self.create_chart_in_grid(parent, "🔮 Прогноз доходов", row, col)
+        frame = self.create_chart_in_grid(parent, "Прогноз доходов", row, col)
         frame.grid(row=row, column=col, rowspan=1, columnspan=colspan,
                    padx=5, pady=5, sticky='nsew')
 
@@ -666,18 +662,16 @@ class FinancialAnalytics:
                 forecast_frame = tk.Frame(frame, bg='#f0f8ff', relief=tk.RIDGE, bd=1)
                 forecast_frame.pack(fill=tk.X, pady=(10, 0))
 
-                # Иконка и текст
-                tk.Label(forecast_frame, text="📊", font=('Arial', 16),
+                tk.Label(forecast_frame, text="Прогноз:", font=('Arial', 11, 'bold'),
                          bg='#f0f8ff').pack(side=tk.LEFT, padx=10, pady=5)
 
-                forecast_text = f"Прогноз на следующий месяц: {forecast[0]:,.0f} руб."
-                tk.Label(forecast_frame, text=forecast_text, font=('Arial', 11, 'bold'),
+                forecast_text = f"На следующий месяц: {forecast[0]:,.0f} руб."
+                tk.Label(forecast_frame, text=forecast_text, font=('Arial', 11),
                          fg='#e74c3c', bg='#f0f8ff').pack(side=tk.LEFT, padx=10, pady=5)
 
             except ImportError:
-                tk.Label(frame, text="⚠️ Для прогнозирования установите scikit-learn\n\npip install scikit-learn",
+                tk.Label(frame, text="Для прогнозирования установите scikit-learn\n\npip install scikit-learn",
                          font=('Arial', 10), fg='gray', justify='center').pack(expand=True)
         else:
-            tk.Label(frame, text=f"⚠️ Недостаточно данных для прогноза\n(минимум 3 месяца, сейчас {len(monthly_data)})",
+            tk.Label(frame, text=f"Недостаточно данных для прогноза\n(минимум 3 месяца, сейчас {len(monthly_data)})",
                      font=('Arial', 11), fg='gray', justify='center').pack(expand=True)
-

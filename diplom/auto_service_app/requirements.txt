@@ -6,3 +6,8 @@ pydantic==2.5.0
 python-multipart==0.0.6
 cryptography==41.0.7
 redis==5.0.1
+requests
+matplotlib
+python-jose[cryptography]
+passlib
+mysql-connector-python
